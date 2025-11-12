@@ -2,7 +2,8 @@ use serde::{Deserialize, Serialize};
 use sqlx::{Decode, FromRow};
 
 #[derive(Serialize, Deserialize, Clone, Debug, sqlx::Type)]
-#[sqlx(rename_all = "snake_case")]
+#[sqlx(rename_all = "lowercase")]
+#[serde(rename_all = "lowercase")]
 pub enum UserFlag {
     Unknown,
     Operator,
