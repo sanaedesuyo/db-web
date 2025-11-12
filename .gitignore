@@ -1,3 +1,6 @@
 /target
 .env
 /tests
+
+.DS_Store
+.idea
