@@ -1,0 +1,13 @@
+[package]
+name = "db-web"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+axum = "0.8.4"
+serde = "1.0.225"
+sqlx = { version = "0.8.6", features = ["mysql", "runtime-tokio-rustls", "macros"] }
+tokio = {version = "1.47.1", features = ["full"]}
+log = "0.4.28"
+env_logger = "0.11.8"
+dotenvy = "0.15.7"
