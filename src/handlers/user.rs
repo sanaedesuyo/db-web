@@ -1,15 +1,9 @@
 use axum::extract::{Query, State};
 use axum::{Json, Router};
 use axum::routing::{delete, get, post};
-use serde::Deserialize;
 use sqlx::MySqlPool;
 use crate::errors::AppError;
 use crate::models::user::*;
-
-#[derive(Debug, Deserialize)]
-pub struct UserQueryId {
-    pub id: u32,
-}
 
 pub async fn get_user(
     State(pool): State<MySqlPool>,
@@ -22,7 +16,7 @@ pub async fn get_user(
     )
         .fetch_one(&pool)
         .await
-        .map_err(|_| AppError::new("该用户不存在".into()))?;
+        .map_err(|_| Json(AppError::new("该用户不存在".into())))?;
 
     Ok(Json(user.into()))
 }
@@ -38,7 +32,7 @@ pub async fn login(
     )
         .fetch_one(&pool)
         .await
-        .map_err(|_| AppError::new("用户名或密码错误".into()))?;
+        .map_err(|_| Json(AppError::new("用户名或密码错误".into())))?;
 
     Ok(Json(user.into()))
 }
@@ -56,9 +50,9 @@ pub async fn insert_user(
     )
         .execute(&pool)
         .await
-        .map_err(|_| AppError::new("添加用户失败".into()))?;
+        .map_err(|_| Json(AppError::new("添加用户失败".into())))?;
 
-    Ok(Json(result.rows_affected()))
+    Ok(Json(result.last_insert_id()))
 }
 
 pub async fn update_user(
@@ -76,7 +70,7 @@ pub async fn update_user(
     )
         .execute(&pool)
         .await
-        .map_err(|_| AppError::new("更新用户失败".into()))?;
+        .map_err(|_| Json(AppError::new("更新用户失败".into())))?;
     
     Ok(Json(result.rows_affected()))
 }
@@ -91,7 +85,7 @@ pub async fn delete_user(
     )
         .execute(&pool)
         .await
-        .map_err(|_| AppError::new("删除用户失败".into()))?;
+        .map_err(|_| Json(AppError::new("删除用户失败".into())))?;
     
     Ok(Json(result.rows_affected()))
 }

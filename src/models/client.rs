@@ -11,6 +11,11 @@ pub enum ClientType {
     Important,
 }
 
+#[derive(Debug, Deserialize)]
+pub struct ClientTypeQuery {
+    pub ctype: ClientType,
+}
+
 impl From<String> for ClientType {
     fn from(s: String) -> Self {
         match s.as_str() {
@@ -30,13 +35,39 @@ pub struct Client {
     /// 客户（甲方）名称
     pub name: String,
     /// 客户类型
-    pub client_type: ClientType,
+    pub ctype: ClientType,
     /// 联系人姓名
     pub contactor: String,
     /// 联系人电话
     pub contactor_tel: String,
     /// 通信email
-    pub email: String,
+    pub email: Option<String>,
     /// 客户备注
-    pub description: String,
+    pub description: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct ClientQueryId {
+    pub id: u32,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct InsertClient {
+    pub name: String,
+    pub ctype: ClientType,
+    pub contactor: String,
+    pub contactor_tel: String,
+    pub email: Option<String>,
+    pub description: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct UpdateClient {
+    pub id: u32,
+    pub name: Option<String>,
+    pub ctype: Option<ClientType>,
+    pub contactor: Option<String>,
+    pub contactor_tel: Option<String>,
+    pub email: Option<String>,
+    pub description: Option<String>,
 }

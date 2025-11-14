@@ -1,6 +1,9 @@
 use std::env;
 use axum::Router;
 use axum::routing::get;
+use db_web::handlers::client::client_routes;
+use db_web::handlers::product::product_routes;
+use db_web::handlers::repository::repository_routes;
 use db_web::handlers::user::user_routes;
 use sqlx::mysql::MySqlPoolOptions;
 
@@ -16,8 +19,11 @@ async fn main() {
         .expect("failed to connect to database");
 
     let app = Router::new()
-        .nest("/user", user_routes())
-        .route("/", get(root))
+        .nest("/api/user", user_routes())
+        .nest("/api/client", client_routes())
+        .nest("/api/repository", repository_routes())
+        .nest("/api/product", product_routes())
+        .route("/api/health", get(health))
         .with_state(pool.clone());
 
     env_logger::init();
@@ -26,6 +32,6 @@ async fn main() {
     axum::serve(listener, app.into_make_service()).await.unwrap();
 }
 
-pub async fn root() -> &'static str {
-    "Hello world"
+pub async fn health() -> &'static str {
+    "OK"
 }

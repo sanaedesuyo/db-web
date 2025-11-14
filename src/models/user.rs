@@ -76,3 +76,13 @@ pub struct UpdateUser {
     pub flag: Option<UserFlag>,
     pub description: Option<String>,
 }
+
+#[derive(Debug, Deserialize)]
+pub struct UserQueryId {
+    pub id: u32,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct UserNameQuery {
+    pub name: String,
+}
