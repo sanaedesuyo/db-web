@@ -4,7 +4,7 @@ use crate::{errors::AppError, middleware::auth::CurrentUser, models::{page::{Pag
 
 pub async fn get_product(
     State(pool): State<MySqlPool>,
-    CurrentUser { .. }: CurrentUser,
+    CurrentUser { username, .. }: CurrentUser,
     Query(param): Query<ProductQueryId>,
 ) -> Result<Json<Product>, Json<AppError>> {
     let result = sqlx::query_as!(
@@ -19,12 +19,14 @@ pub async fn get_product(
             Json(AppError::new("找不到该产品"))
         })?;
 
+    log::info!("{} got product info of {}", username, result.name);
+
     Ok(Json(result))
 }
 
 pub async fn insert_product(
     State(pool): State<MySqlPool>,
-    CurrentUser { .. }: CurrentUser,
+    CurrentUser { username, .. }: CurrentUser,
     Json(product): Json<InsertProduct>,
 ) -> Result<Json<u64>, Json<AppError>> {
     let result = sqlx::query!(
@@ -41,12 +43,14 @@ pub async fn insert_product(
             Json(AppError::new("添加产品失败"))
         })?;
 
+    log::info!("{} inserted new product {}", username, product.name);
+
     Ok(Json(result.last_insert_id()))
 }
 
 pub async fn update_product(
     State(pool): State<MySqlPool>,
-    CurrentUser { .. }: CurrentUser,
+    CurrentUser { username, .. }: CurrentUser,
     Json(product): Json<UpdateProduct>,
 ) -> Result<Json<u64>, Json<AppError>> {
     let result = sqlx::query!(
@@ -66,12 +70,14 @@ pub async fn update_product(
             Json(AppError::new("更新产品信息失败"))
         })?;
 
+    log::info!("{} updated product info with id: {}", username, product.id);
+
     Ok(Json(result.rows_affected()))
 }
 
 pub async fn get_all_product(
     State(pool): State<MySqlPool>,
-    CurrentUser { .. }: CurrentUser,
+    CurrentUser { username, .. }: CurrentUser,
 ) -> Result<Json<Vec<Product>>, Json<AppError>> {
     let result = sqlx::query_as!(
         Product,
@@ -84,12 +90,14 @@ pub async fn get_all_product(
             Json(AppError::new("无法获取产品信息列表"))
         })?;
 
+    log::info!("{} got all product info", username);
+
     Ok(Json(result))
 }
 
 pub async fn get_product_page(
     State(pool): State<MySqlPool>,
-    CurrentUser { .. }: CurrentUser,
+    CurrentUser { username, .. }: CurrentUser,
     Query(page_query): Query<PageQuery>,
 ) -> Result<Json<PageResponse<Product>>, Json<AppError>> {
     let result = no_conditional_page_query::<Product>(
@@ -102,6 +110,8 @@ pub async fn get_product_page(
             log::warn!("{}", err);
             Json(err)
         })?;
+
+    log::info!("{} got {} product records of {}/{} page", username, result.data.len(), result.current_page, result.total_pages);
 
     Ok(Json(result))
 }

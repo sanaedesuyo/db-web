@@ -4,7 +4,7 @@ use crate::{errors::AppError, middleware::auth::CurrentUser, models::repository:
 
 pub async fn get_repository(
     State(pool): State<MySqlPool>,
-    CurrentUser { .. }: CurrentUser,
+    CurrentUser { username, .. }: CurrentUser,
     Query(param): Query<RepositoryQueryId>,
 ) -> Result<Json<Repository>, Json<AppError>> {
     let result = sqlx::query_as!(
@@ -19,14 +19,14 @@ pub async fn get_repository(
             Json(AppError::new("找不到该仓库"))
         })?;
 
-    log::info!("Got repository: {} successfully", result.name);
+    log::info!("{} got repository: {}", username, result.name);
 
     Ok(Json(result))
 }
 
 pub async fn insert_repository(
     State(pool): State<MySqlPool>,
-    CurrentUser { .. }: CurrentUser,
+    CurrentUser { username, .. }: CurrentUser,
     Json(repository): Json<InsertRepository>,
 ) -> Result<Json<u64>, Json<AppError>> {
     let result = sqlx::query!(
@@ -42,14 +42,14 @@ pub async fn insert_repository(
             Json(AppError::new("添加仓库失败"))
         })?;
 
-    log::info!("Inserted repository: {} successfully", repository.name);
+    log::info!("{} inserted repository: {}", username, repository.name);
 
     Ok(Json(result.last_insert_id()))
 }
 
 pub async fn update_repository(
     State(pool): State<MySqlPool>,
-    CurrentUser { .. }: CurrentUser,
+    CurrentUser { username, .. }: CurrentUser,
     Json(repository): Json<UpdateRepository>,
 ) -> Result<Json<u64>, Json<AppError>> {
     let result = sqlx::query!(
@@ -65,12 +65,14 @@ pub async fn update_repository(
             Json(AppError::new("更新仓库失败"))
         })?;
 
+    log::info!("{} updated repository id: {}", username, repository.id);
+
     Ok(Json(result.rows_affected()))
 }
 
 pub async fn get_all_repositories(
     State(pool): State<MySqlPool>,
-    CurrentUser { .. }: CurrentUser,
+    CurrentUser { username, .. }: CurrentUser,
 ) -> Result<Json<Vec<Repository>>, Json<AppError>> {
     let result = sqlx::query_as!(
         Repository,
@@ -83,12 +85,14 @@ pub async fn get_all_repositories(
             Json(AppError::new("无法获取所有仓库"))
         })?;
 
+    log::info!("{} got all repositories", username);
+
     Ok(Json(result))
 }
 
 pub async fn get_repository_by_name_likes(
     State(pool): State<MySqlPool>,
-    CurrentUser { .. }: CurrentUser,
+    CurrentUser { username, .. }: CurrentUser,
     Query(param): Query<RepositoryNameQuery>,
 ) -> Result<Json<Vec<Repository>>, Json<AppError>> {
     let result = sqlx::query_as!(
@@ -103,12 +107,14 @@ pub async fn get_repository_by_name_likes(
             Json(AppError::new("无法获取仓库"))
         })?;
 
+    log::info!("{} got repositories with name likes {}", username, param.name);
+
     Ok(Json(result))
 }
 
 pub async fn delete_repository(
     State(pool): State<MySqlPool>,
-    CurrentUser { .. }: CurrentUser,
+    CurrentUser { username, .. }: CurrentUser,
     Query(param): Query<RepositoryQueryId>,
 ) -> Result<Json<u64>, Json<AppError>> {
     let result = sqlx::query!(
@@ -121,6 +127,8 @@ pub async fn delete_repository(
             log::warn!("{}", err);
             Json(AppError::new("删除仓库失败"))
         })?;
+
+    log::info!("{} deleted repository id: {}", username, param.id);
 
     Ok(Json(result.rows_affected()))
 }

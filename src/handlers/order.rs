@@ -5,7 +5,7 @@ use crate::{errors::AppError, middleware::auth::CurrentUser, models::{client::{C
 
 pub async fn get_order(
     State(pool): State<MySqlPool>,
-    CurrentUser { .. }: CurrentUser,
+    CurrentUser { username, .. }: CurrentUser,
     Query(param): Query<OrderQueryId>,
 ) -> Result<Json<OrderDTO>, Json<AppError>> {
     let order = sqlx::query_as!(
@@ -46,6 +46,8 @@ pub async fn get_order(
         .map(Into::into)
         .collect();
 
+    log::info!("{} got order id: {}", username, existed_order.order_id);
+
     Ok(Json(OrderDTO {
         order: existed_order,
         order_items: order_items_dto,
@@ -55,7 +57,7 @@ pub async fn get_order(
 
 pub async fn get_orders_page_of_client(
     State(pool): State<MySqlPool>,
-    CurrentUser { .. }: CurrentUser,
+    CurrentUser { username, .. }: CurrentUser,
     Query(param): Query<ClientPageQueryId>,
 ) -> Result<Json<PageResponse<OrderDTO>>, Json<AppError>> {
     let offset = (param.page.page - 1) * param.page.page_size;
@@ -135,18 +137,22 @@ pub async fn get_orders_page_of_client(
         });
     }
 
-    Ok(Json(PageResponse {
+    let response = PageResponse {
         data: result,
         total: total as u64,
         current_page: param.page.page,
         page_size: param.page.page_size,
         total_pages,
-    }))
+    };
+
+    log::info!("{} get {} order records {}/{} page", username, response.data.len(), param.page.page, total_pages);
+
+    Ok(Json(response))
 }
 
 pub async fn add_order(
     State(pool): State<MySqlPool>,
-    CurrentUser { .. }: CurrentUser,
+    CurrentUser { username, .. }: CurrentUser,
     Json(detailed_order): Json<InsertOrder>,
 ) -> Result<Json<u64>, Json<AppError>> {
     let mut transaction = pool.begin().await.map_err(|err| {
@@ -190,12 +196,14 @@ pub async fn add_order(
         Json(AppError::new("数据更新失败，事务未能成功提交"))
     })?;
 
+    log::info!("{} received a new order id: {}", username, order_id);
+
     Ok(Json(order_id))
 }
 
 pub async fn update_order(
     State(pool): State<MySqlPool>,
-    CurrentUser { .. }: CurrentUser,
+    CurrentUser { username, .. }: CurrentUser,
     Json(order): Json<UpdateOrder>,
 ) -> Result<Json<u64>, Json<AppError>> {
     let result = sqlx::query!(
@@ -210,6 +218,8 @@ pub async fn update_order(
             log::warn!("{}", err);
             Json(AppError::new("数据更新失败"))
         })?;
+
+    log::info!("{} updated order id: {}", username, order.id);
 
     Ok(Json(result.rows_affected()))
 }

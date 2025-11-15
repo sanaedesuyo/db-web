@@ -7,7 +7,7 @@ use crate::{errors::AppError, middleware::auth::CurrentUser, models::inventory::
 
 pub async fn get_inventory_of_repository(
     State(pool): State<MySqlPool>,
-    CurrentUser { .. }: CurrentUser,
+    CurrentUser { username, .. }: CurrentUser,
     Query(param): Query<InventoryRepoQueryId>,
 ) -> Result<Json<Vec<InventoryDetail>>, Json<AppError>> {
     let result = sqlx::query_as::<_, InventoryDetail>(
@@ -32,12 +32,14 @@ pub async fn get_inventory_of_repository(
             Json(AppError::new("无法获取库存信息"))
         })?;
 
+    log::info!("{} got inventory of repository id: {}", username, param.rid);
+
     Ok(Json(result))
 }
 
 pub async fn get_inventory_of_product(
     State(pool): State<MySqlPool>,
-    CurrentUser { .. }: CurrentUser,
+    CurrentUser { username, .. }: CurrentUser,
     Query(param): Query<InventoryProductQueryId>,
 ) -> Result<Json<Vec<InventoryDetail>>, Json<AppError>> {
     let result = sqlx::query_as::<_, InventoryDetail>(
@@ -62,12 +64,14 @@ pub async fn get_inventory_of_product(
             Json(AppError::new("无法获取库存信息"))
         })?;
 
+    log::info!("{} got inventory of product id: {}", username, param.pid);
+
     Ok(Json(result))
 }
 
 pub async fn add_inventory(
     State(pool): State<MySqlPool>,
-    CurrentUser { .. }: CurrentUser,
+    CurrentUser { username, .. }: CurrentUser,
     Json(inventory): Json<AddInventory>,
 ) -> Result<Json<u64>, Json<AppError>> {
     let mut transaction = pool.begin().await.map_err(|err| {
@@ -118,12 +122,14 @@ pub async fn add_inventory(
         Json(AppError::new("更新失败，事务未能成功提交"))
     })?;
 
+    log::info!("{} added {} product with id {} into repository with id {}", username, inventory.amount, inventory.pid, inventory.rid);
+
     Ok(Json(result.rows_affected()))
 }
 
 pub async fn reduce_inventory(
     State(pool): State<MySqlPool>,
-    CurrentUser { .. }: CurrentUser,
+    CurrentUser { username, .. }: CurrentUser,
     Json(inventory): Json<ReduceInventory>,
 ) -> Result<Json<u64>, Json<AppError>> {
     let mut transaction = pool.begin().await.map_err(|err| {
@@ -171,6 +177,8 @@ pub async fn reduce_inventory(
         log::warn!("Failed to commit transaction: {}", err);
         Json(AppError::new("更新失败，事务未能成功提交"))
     })?;
-    
+
+    log::info!("{} reduced {} product with id {} inside repository with id {}", username, inventory.amount, inventory.pid, inventory.rid);
+
     Ok(Json(result.rows_affected()))
 }

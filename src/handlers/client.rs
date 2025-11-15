@@ -5,7 +5,7 @@ use crate::{errors::AppError, middleware::auth::CurrentUser, models::{client::*,
 
 pub async fn get_client(
     State(pool): State<MySqlPool>,
-    CurrentUser { .. }: CurrentUser,
+    CurrentUser { username, .. }: CurrentUser,
     Query(param): Query<ClientQueryId>,
 ) -> Result<Json<Client>, Json<AppError>> {
     let result = sqlx::query_as!(
@@ -17,14 +17,14 @@ pub async fn get_client(
         .await
         .map_err(|_| Json(AppError::new("找不到该客户")))?;
 
-    log::info!("Got client: {} successfully", result.name);
+    log::info!("{} got client: {}", username, result.name);
 
     Ok(Json(result))
 }
 
 pub async fn insert_client(
     State(pool): State<MySqlPool>,
-    CurrentUser { .. }: CurrentUser,
+    CurrentUser { username, .. }: CurrentUser,
     Json(client): Json<InsertClient>,
 ) -> Result<Json<u64>, Json<AppError>> {
     let result = sqlx::query!(
@@ -38,7 +38,7 @@ pub async fn insert_client(
         .await
         .map_err(|_| Json(AppError::new("添加客户失败")))?;
 
-    log::info!("Inserted client: {} successfully", client.name);
+    log::info!("{} inserted client: {}", username, client.name);
 
     Ok(Json(result.last_insert_id()))
 }
@@ -46,7 +46,7 @@ pub async fn insert_client(
 
 pub async fn update_client(
     State(pool): State<MySqlPool>,
-    CurrentUser { .. }: CurrentUser,
+    CurrentUser { username, .. }: CurrentUser,
     Json(client): Json<UpdateClient>,
 ) -> Result<Json<u64>, Json<AppError>> {
     let result = sqlx::query!(
@@ -64,14 +64,14 @@ pub async fn update_client(
         .await
         .map_err(|_| Json(AppError::new("更新客户失败")))?;
 
-    log::info!("Updated client: {} successfully", client.id);
+    log::info!("{} updated client: {}", username, client.id);
 
     Ok(Json(result.rows_affected()))
 }
 
 pub async fn get_all_clients(
     State(pool): State<MySqlPool>,
-    CurrentUser { .. }: CurrentUser,
+    CurrentUser { username, .. }: CurrentUser,
 ) -> Result<Json<Vec<Client>>, Json<AppError>> {
     let result = sqlx::query_as!(
         Client,
@@ -81,14 +81,14 @@ pub async fn get_all_clients(
         .await
         .map_err(|_| Json(AppError::new("获取客户失败")))?;
 
-    log::info!("Got all clients successfully");
+    log::info!("{} got all clients", username);
 
     Ok(Json(result))
 }
 
 pub async fn get_specified_clients(
     State(pool): State<MySqlPool>,
-    CurrentUser { .. }: CurrentUser,
+    CurrentUser { username, .. }: CurrentUser,
     Query(param): Query<ClientTypeQuery>
 ) -> Result<Json<Vec<Client>>, Json<AppError>> {
     let result = sqlx::query_as!(
@@ -100,14 +100,14 @@ pub async fn get_specified_clients(
         .await
         .map_err(|_| Json(AppError::new("获取客户失败")))?;
 
-    log::info!("Got specified clients with type {:?} successfully", param.ctype);
+    log::info!("{} got specified clients with type {:?} successfully", username, param.ctype);
 
     Ok(Json(result))
 }
 
 pub async fn get_clients_by_name_likes(
     State(pool): State<MySqlPool>,
-    CurrentUser { .. }: CurrentUser,
+    CurrentUser { username, .. }: CurrentUser,
     Query(param): Query<UserNameQuery>,
 ) -> Result<Json<Vec<Client>>, Json<AppError>> {
     let result = sqlx::query_as!(
@@ -119,7 +119,7 @@ pub async fn get_clients_by_name_likes(
         .await
         .map_err(|_| Json(AppError::new("获取客户失败")))?;
 
-    log::info!("Got clients by name likes: {} successfully", param.name);
+    log::info!("{} got clients by name likes: {} successfully", username, param.name);
 
     Ok(Json(result))
 }

@@ -70,6 +70,7 @@ pub async fn login(
 
 pub async fn insert_user(
     State(pool): State<MySqlPool>,
+    RequireAdmin(admin): RequireAdmin,
     Json(user): Json<InsertUser>,
 ) -> Result<Json<u64>, Json<AppError>> {
     let result = sqlx::query!(
@@ -88,12 +89,14 @@ pub async fn insert_user(
             Json(AppError::new("添加用户失败"))
         })?;
 
+    log::info!("'{}' created a new '{}' user '{}'", admin.username, String::from(user.flag), user.name);
+
     Ok(Json(result.last_insert_id()))
 }
 
 pub async fn update_user(
     State(pool): State<MySqlPool>,
-    RequireAdmin(_admin): RequireAdmin,
+    RequireAdmin(admin): RequireAdmin,
     Json(user): Json<UpdateUser>,
 ) -> Result<Json<u64>, Json<AppError>> {
     let mut enc_pwd = None;
@@ -116,12 +119,14 @@ pub async fn update_user(
         .await
         .map_err(|_| Json(AppError::new("更新用户失败")))?;
     
+    log::info!("{} updated info of user {}", admin.username, user.id);
+    
     Ok(Json(result.rows_affected()))
 }
 
 pub async fn delete_user(
     State(pool): State<MySqlPool>,
-    RequireAdmin(_admin): RequireAdmin,
+    RequireAdmin(admin): RequireAdmin,
     Query(param): Query<UserQueryId>,
 ) -> Result<Json<u64>, Json<AppError>> {
     let result = sqlx::query!(
@@ -131,6 +136,8 @@ pub async fn delete_user(
         .execute(&pool)
         .await
         .map_err(|_| Json(AppError::new("删除用户失败")))?;
+    
+    log::info!("{} deleted user id: {}", admin.username, param.id);
     
     Ok(Json(result.rows_affected()))
 }
