@@ -1,4 +1,5 @@
 use axum::{Json, extract::FromRequestParts, http::{StatusCode, header::AUTHORIZATION}};
+use chrono::Utc;
 
 use crate::{errors::AppError, models::user::UserFlag, utils::jwt::verify_token};
 
@@ -45,6 +46,13 @@ where
                 Json(AppError::new("无效令牌")),
             )
         })?;
+
+        if claims.exp < Utc::now().timestamp() {
+            return Err((
+                StatusCode::UNAUTHORIZED,
+                Json(AppError::new("登录令牌已过期，请重新登录")),
+            ));
+        }
 
         Ok(CurrentUser {
             id: claims.user_id,
