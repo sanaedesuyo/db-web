@@ -1,4 +1,4 @@
-use axum::{Json, Router, extract::{Query, State}, routing::{get, post}};
+use axum::{Json, extract::{Query, State}};
 use sqlx::MySqlPool;
 
 use crate::{errors::AppError, middleware::auth::CurrentUser, models::{client::{Client, ClientPageQueryId}, order::{InsertOrder, Order, OrderDTO, OrderItem, OrderQueryId, UpdateOrder}, page::PageResponse}, utils::generation::generate_order_id};
@@ -212,12 +212,4 @@ pub async fn update_order(
         })?;
 
     Ok(Json(result.rows_affected()))
-}
-
-pub fn order_routes() -> Router<MySqlPool> {
-    Router::new()
-        .route("/", get(get_order))
-        .route("/page", get(get_orders_page_of_client))
-        .route("/add", post(add_order))
-        .route("/update", post(update_order))
 }

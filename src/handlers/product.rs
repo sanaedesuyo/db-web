@@ -1,4 +1,4 @@
-use axum::{Json, Router, extract::{Query, State}, routing::{get, post}};
+use axum::{Json, extract::{Query, State}};
 use sqlx::MySqlPool;
 use crate::{errors::AppError, middleware::auth::CurrentUser, models::{page::{PageQuery, PageResponse}, product::*}, utils::page_query::no_conditional_page_query};
 
@@ -104,13 +104,4 @@ pub async fn get_product_page(
         })?;
 
     Ok(Json(result))
-}
-
-pub fn product_routes() -> Router<MySqlPool> {
-    Router::new()
-        .route("/get", get(get_product))
-        .route("/add", post(insert_product))
-        .route("/update", post(update_product))
-        .route("/get_all", get(get_all_product))
-        .route("/get_page", get(get_product_page))
 }

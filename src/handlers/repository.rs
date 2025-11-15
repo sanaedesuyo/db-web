@@ -1,4 +1,4 @@
-use axum::{Json, Router, extract::{Query, State}, routing::{delete, get, post}};
+use axum::{Json, extract::{Query, State}};
 use sqlx::MySqlPool;
 use crate::{errors::AppError, middleware::auth::CurrentUser, models::repository::*};
 
@@ -123,14 +123,4 @@ pub async fn delete_repository(
         })?;
 
     Ok(Json(result.rows_affected()))
-}
-
-pub fn repository_routes() -> Router<MySqlPool> {
-    Router::new()
-        .route("/get", get(get_repository))
-        .route("/add", post(insert_repository))
-        .route("/update", post(update_repository))
-        .route("/get_all", get(get_all_repositories))
-        .route("/get_by_name_likes", get(get_repository_by_name_likes))
-        .route("/delete", delete(delete_repository))
 }

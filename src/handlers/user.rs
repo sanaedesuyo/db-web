@@ -1,6 +1,5 @@
 use axum::extract::{Query, State};
-use axum::{Json, Router};
-use axum::routing::{delete, get, post};
+use axum::Json;
 use serde_json::Value;
 use sqlx::MySqlPool;
 use crate::errors::AppError;
@@ -134,13 +133,4 @@ pub async fn delete_user(
         .map_err(|_| Json(AppError::new("删除用户失败")))?;
     
     Ok(Json(result.rows_affected()))
-}
-
-pub fn user_routes() -> Router<MySqlPool> {
-    Router::new()
-        .route("/login", post(login))
-        .route("/get", get(get_user))
-        .route("/delete", delete(delete_user))
-        .route("/add", post(insert_user))
-        .route("/update", post(update_user))
 }

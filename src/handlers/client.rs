@@ -1,4 +1,4 @@
-use axum::{Json, Router, extract::{Query, State}, routing::{get, post}};
+use axum::{Json, extract::{Query, State}};
 use sqlx::MySqlPool;
 
 use crate::{errors::AppError, middleware::auth::CurrentUser, models::{client::*, user::UserNameQuery}};
@@ -122,14 +122,4 @@ pub async fn get_clients_by_name_likes(
     log::info!("Got clients by name likes: {} successfully", param.name);
 
     Ok(Json(result))
-}
-
-pub fn client_routes() -> Router<MySqlPool> {
-    Router::new()
-        .route("/get", get(get_client))
-        .route("/add", post(insert_client))
-        .route("/update", post(update_client))
-        .route("/get_all", get(get_all_clients))
-        .route("/get_specified", get(get_specified_clients))
-        .route("/get_by_name_likes", get(get_clients_by_name_likes))
 }

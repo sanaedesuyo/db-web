@@ -1,4 +1,4 @@
-use axum::{Json, Router, extract::{Query, State}, routing::{get, post}};
+use axum::{Json, extract::{Query, State}};
 use sqlx::{MySqlPool};
 
 use crate::{errors::AppError, middleware::auth::CurrentUser, models::inventory::{
@@ -173,12 +173,4 @@ pub async fn reduce_inventory(
     })?;
     
     Ok(Json(result.rows_affected()))
-}
-
-pub fn inventory_routes() -> Router<MySqlPool> {
-    Router::new()
-        .route("/of_product", get(get_inventory_of_product))
-        .route("/of_repo", get(get_inventory_of_repository))
-        .route("/add", post(add_inventory))
-        .route("/reduce", post(reduce_inventory))
 }

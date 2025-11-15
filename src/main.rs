@@ -1,13 +1,9 @@
 use std::env;
 use axum::Router;
 use axum::routing::get;
-use db_web::handlers::client::client_routes;
-use db_web::handlers::inventory::inventory_routes;
-use db_web::handlers::order::order_routes;
-use db_web::handlers::product::product_routes;
-use db_web::handlers::repository::repository_routes;
-use db_web::handlers::user::user_routes;
 use sqlx::mysql::MySqlPoolOptions;
+
+use db_web::routes::router::*;
 
 #[tokio::main]
 async fn main() {
