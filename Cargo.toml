@@ -6,8 +6,15 @@ edition = "2021"
 [dependencies]
 axum = "0.8.4"
 serde = "1.0.225"
-sqlx = { version = "0.8.6", features = ["mysql", "runtime-tokio-rustls", "macros"] }
+sqlx = { version = "0.8.6", features = ["mysql", "runtime-tokio-rustls", "macros", "chrono"] }
 tokio = {version = "1.47.1", features = ["full"]}
 log = "0.4.28"
 env_logger = "0.11.8"
 dotenvy = "0.15.7"
+jsonwebtoken = { version = "10.2.0", features = ["rust_crypto"] }
+axum-extra = { version = "0.12.2", features = ["cookie"] }
+chrono = { version = "0.4.42", features = ["serde"] }
+uuid = { version = "1.18.1", features = ["v4"] }
+bcrypt = "0.17.1"
+serde_with = "3.16.0"
+serde_json = "1.0.145"

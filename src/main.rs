@@ -2,6 +2,8 @@ use std::env;
 use axum::Router;
 use axum::routing::get;
 use db_web::handlers::client::client_routes;
+use db_web::handlers::inventory::inventory_routes;
+use db_web::handlers::order::order_routes;
 use db_web::handlers::product::product_routes;
 use db_web::handlers::repository::repository_routes;
 use db_web::handlers::user::user_routes;
@@ -23,6 +25,8 @@ async fn main() {
         .nest("/api/client", client_routes())
         .nest("/api/repository", repository_routes())
         .nest("/api/product", product_routes())
+        .nest("/api/inventory", inventory_routes())
+        .nest("/api/order", order_routes())
         .route("/api/health", get(health))
         .with_state(pool.clone());
 

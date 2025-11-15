@@ -35,7 +35,7 @@ impl axum::response::IntoResponse for AppError {
 }
 
 impl AppError {
-    pub fn new(error: String) -> Self {
-        AppError { error }
+    pub fn new(error: &str) -> Self {
+        AppError { error: error.into() }
     }
 }

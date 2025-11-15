@@ -1,6 +1,8 @@
 use serde::{Deserialize, Serialize};
 use sqlx::FromRow;
 
+use crate::models::page::PageQuery;
+
 #[derive(Deserialize, Serialize, Debug, Clone, sqlx::Type)]
 #[sqlx(rename_all = "lowercase")]
 #[serde(rename_all = "lowercase")]
@@ -49,6 +51,13 @@ pub struct Client {
 #[derive(Debug, Deserialize)]
 pub struct ClientQueryId {
     pub id: u32,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct ClientPageQueryId {
+    pub id: u32,
+    #[serde(flatten)]
+    pub page: PageQuery,
 }
 
 #[derive(Debug, Deserialize)]

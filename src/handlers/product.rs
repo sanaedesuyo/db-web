@@ -1,9 +1,10 @@
 use axum::{Json, Router, extract::{Query, State}, routing::{get, post}};
 use sqlx::MySqlPool;
-use crate::{errors::AppError, models::{page::{PageQuery, PageResponse}, product::*}};
+use crate::{errors::AppError, middleware::auth::CurrentUser, models::{page::{PageQuery, PageResponse}, product::*}, utils::page_query::no_conditional_page_query};
 
 pub async fn get_product(
     State(pool): State<MySqlPool>,
+    CurrentUser { .. }: CurrentUser,
     Query(param): Query<ProductQueryId>,
 ) -> Result<Json<Product>, Json<AppError>> {
     let result = sqlx::query_as!(
@@ -15,7 +16,7 @@ pub async fn get_product(
         .await
         .map_err(|err| {
             log::warn!("{}", err);
-            Json(AppError::new("找不到该产品".into()))
+            Json(AppError::new("找不到该产品"))
         })?;
 
     Ok(Json(result))
@@ -23,6 +24,7 @@ pub async fn get_product(
 
 pub async fn insert_product(
     State(pool): State<MySqlPool>,
+    CurrentUser { .. }: CurrentUser,
     Json(product): Json<InsertProduct>,
 ) -> Result<Json<u64>, Json<AppError>> {
     let result = sqlx::query!(
@@ -36,7 +38,7 @@ pub async fn insert_product(
         .await
         .map_err(|err| {
             log::warn!("{}", err);
-            Json(AppError::new("添加产品失败".into()))
+            Json(AppError::new("添加产品失败"))
         })?;
 
     Ok(Json(result.last_insert_id()))
@@ -44,6 +46,7 @@ pub async fn insert_product(
 
 pub async fn update_product(
     State(pool): State<MySqlPool>,
+    CurrentUser { .. }: CurrentUser,
     Json(product): Json<UpdateProduct>,
 ) -> Result<Json<u64>, Json<AppError>> {
     let result = sqlx::query!(
@@ -60,14 +63,15 @@ pub async fn update_product(
         .await
         .map_err(|err| {
             log::warn!("{}", err);
-            Json(AppError::new("更新产品信息失败".into()))
+            Json(AppError::new("更新产品信息失败"))
         })?;
 
     Ok(Json(result.rows_affected()))
 }
 
 pub async fn get_all_product(
-    State(pool): State<MySqlPool>
+    State(pool): State<MySqlPool>,
+    CurrentUser { .. }: CurrentUser,
 ) -> Result<Json<Vec<Product>>, Json<AppError>> {
     let result = sqlx::query_as!(
         Product,
@@ -77,7 +81,7 @@ pub async fn get_all_product(
         .await
         .map_err(|err| {
             log::warn!("{}", err);
-            Json(AppError::new("无法获取产品信息列表".into()))
+            Json(AppError::new("无法获取产品信息列表"))
         })?;
 
     Ok(Json(result))
@@ -85,43 +89,21 @@ pub async fn get_all_product(
 
 pub async fn get_product_page(
     State(pool): State<MySqlPool>,
+    CurrentUser { .. }: CurrentUser,
     Query(page_query): Query<PageQuery>,
 ) -> Result<Json<PageResponse<Product>>, Json<AppError>> {
-    let offset = (page_query.page - 1) * page_query.page_size;
-
-    let total = sqlx::query_scalar!(
-        "SELECT COUNT(*) FROM products"
+    let result = no_conditional_page_query::<Product>(
+        &pool,
+        "products",
+        page_query,
     )
-        .fetch_one(&pool)
         .await
         .map_err(|err| {
             log::warn!("{}", err);
-            Json(AppError::new("获取产品总数失败".into()))
-        })?;
-    
-    let products = sqlx::query_as!(
-        Product,
-        "SELECT * FROM products LIMIT ? OFFSET ?",
-        page_query.page_size, offset
-    )
-        .fetch_all(&pool)
-        .await
-        .map_err(|err| {
-            log::warn!("{}", err);
-            Json(AppError::new("获取产品列表失败".into()))
+            Json(err)
         })?;
 
-    let total_pages = (
-        (total as f64) / (page_query.page_size as f64)
-    ).ceil() as u64;
-
-    Ok(Json(PageResponse {
-        data: products,
-        total: total as u64,
-        current_page: page_query.page,
-        page_size: page_query.page_size,
-        total_pages,
-    }))
+    Ok(Json(result))
 }
 
 pub fn product_routes() -> Router<MySqlPool> {

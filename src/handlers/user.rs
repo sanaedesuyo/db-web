@@ -1,12 +1,17 @@
 use axum::extract::{Query, State};
 use axum::{Json, Router};
 use axum::routing::{delete, get, post};
+use serde_json::Value;
 use sqlx::MySqlPool;
 use crate::errors::AppError;
+use crate::middleware::auth::RequireAdmin;
 use crate::models::user::*;
+use crate::utils::jwt::{Claims, generate_token};
+use crate::utils::password::{encrypt_password, verify_password};
 
 pub async fn get_user(
     State(pool): State<MySqlPool>,
+    RequireAdmin(_admin): RequireAdmin,
     Query(param): Query<UserQueryId>
 ) -> Result<Json<UserDTO>, Json<AppError>> {
     let user = sqlx::query_as!(
@@ -16,7 +21,7 @@ pub async fn get_user(
     )
         .fetch_one(&pool)
         .await
-        .map_err(|_| Json(AppError::new("该用户不存在".into())))?;
+        .map_err(|_| Json(AppError::new("该用户不存在")))?;
 
     Ok(Json(user.into()))
 }
@@ -24,17 +29,44 @@ pub async fn get_user(
 pub async fn login(
     State(pool): State<MySqlPool>,
     Json(user): Json<LoginUser>,
-) -> Result<Json<UserDTO>, Json<AppError>> {
-    let user = sqlx::query_as!(
+) -> Result<Json<Value>, Json<AppError>> {
+    let existed_user = sqlx::query_as!(
         User,
-        "SELECT * FROM users WHERE name = ? AND password = ?",
-        user.name, user.password
+        "SELECT * FROM users WHERE name = ?",
+        user.name
     )
-        .fetch_one(&pool)
+        .fetch_optional(&pool)
         .await
-        .map_err(|_| Json(AppError::new("用户名或密码错误".into())))?;
+        .map_err(|err| {
+            log::warn!("{}", err);
+            Json(AppError::new("登录时发生错误"))
+        })?
+        .ok_or_else(|| {
+            Json(AppError::new("用户不存在"))
+        })?;
 
-    Ok(Json(user.into()))
+    if verify_password(user.password, &existed_user.password).map_err(|err| {
+        log::warn!("{}", err);
+        Json(AppError::new("验证密码时发生错误"))
+    })? {
+        let claims = Claims::new(
+            existed_user.id,
+            existed_user.name.clone(),
+            existed_user.flag.clone().into()
+        );
+
+        let token = generate_token(&claims).map_err(|err| {
+            log::warn!("Failed to generate token: {}", err);
+            Json(AppError::new("生成认证令牌失败"))
+        })?;
+
+        Ok(Json(serde_json::json!({
+            "user": UserDTO::from(existed_user),
+            "token": token,
+        })))
+    } else {
+        Err(Json(AppError::new("密码错误")))
+    }
 }
 
 pub async fn insert_user(
@@ -46,19 +78,32 @@ pub async fn insert_user(
         INSERT INTO users (name, password, flag, description)
         VALUES (?, ?, ?, ?)
         "#,
-        user.name, user.password, user.flag, user.description
+        user.name, encrypt_password(user.password).map_err(|_| {
+            Json(AppError::new("注册时发生错误"))
+        })?, user.flag, user.description
     )
         .execute(&pool)
         .await
-        .map_err(|_| Json(AppError::new("添加用户失败".into())))?;
+        .map_err(|err| {
+            log::warn!("{}", err);
+            Json(AppError::new("添加用户失败"))
+        })?;
 
     Ok(Json(result.last_insert_id()))
 }
 
 pub async fn update_user(
     State(pool): State<MySqlPool>,
+    RequireAdmin(_admin): RequireAdmin,
     Json(user): Json<UpdateUser>,
 ) -> Result<Json<u64>, Json<AppError>> {
+    let mut enc_pwd = None;
+    if let Some(pwd) = user.password {
+        enc_pwd = Some(encrypt_password(pwd).map_err(|_| {
+            Json(AppError::new("更新时发生错误"))
+        })?);
+    };
+
     let result = sqlx::query!(
         r#"UPDATE users SET
         name = COALESCE(?, name),
@@ -66,17 +111,18 @@ pub async fn update_user(
         flag = COALESCE(?, flag),
         description = COALESCE(?, description)
         WHERE id = ?"#,
-        user.name, user.password, user.flag, user.description, user.id
+        user.name, enc_pwd, user.flag, user.description, user.id
     )
         .execute(&pool)
         .await
-        .map_err(|_| Json(AppError::new("更新用户失败".into())))?;
+        .map_err(|_| Json(AppError::new("更新用户失败")))?;
     
     Ok(Json(result.rows_affected()))
 }
 
 pub async fn delete_user(
     State(pool): State<MySqlPool>,
+    RequireAdmin(_admin): RequireAdmin,
     Query(param): Query<UserQueryId>,
 ) -> Result<Json<u64>, Json<AppError>> {
     let result = sqlx::query!(
@@ -85,7 +131,7 @@ pub async fn delete_user(
     )
         .execute(&pool)
         .await
-        .map_err(|_| Json(AppError::new("删除用户失败".into())))?;
+        .map_err(|_| Json(AppError::new("删除用户失败")))?;
     
     Ok(Json(result.rows_affected()))
 }

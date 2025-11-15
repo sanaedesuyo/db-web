@@ -20,6 +20,16 @@ impl From<String> for UserFlag {
     }
 }
 
+impl From<UserFlag> for String {
+    fn from(value: UserFlag) -> Self {
+        match value {
+            UserFlag::Admin => "admin".into(),
+            UserFlag::Operator => "operator".into(),
+            UserFlag::Unknown => "unknown".into()
+        }
+    }
+}
+
 /// 系统用户
 #[derive(Debug, Serialize, Deserialize, FromRow, Decode)]
 pub struct User {
