@@ -78,7 +78,8 @@ pub async fn insert_user(
         INSERT INTO users (name, password, flag, description)
         VALUES (?, ?, ?, ?)
         "#,
-        user.name, encrypt_password(user.password).map_err(|_| {
+        user.name, encrypt_password(user.password).map_err(|err| {
+            log::error!("Failed to encrypt password: {}", err);
             Json(AppError::new("注册时发生错误"))
         })?, user.flag, user.description
     )

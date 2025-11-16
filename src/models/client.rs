@@ -29,6 +29,17 @@ impl From<String> for ClientType {
     }
 }
 
+impl From<ClientType> for String {
+    fn from(value: ClientType) -> Self {
+        match value {
+            ClientType::Abnormal => "abnormal",
+            ClientType::Normal => "normal",
+            ClientType::Important => "important",
+            _ => "unknown",
+        }.into()
+    }
+}
+
 #[derive(Debug, Serialize, Deserialize, FromRow, Clone)]
 /// 客户信息
 pub struct Client {
@@ -36,6 +47,10 @@ pub struct Client {
     pub id: u32,
     /// 客户（甲方）名称
     pub name: String,
+    /// 客户账号名
+    pub username: String, 
+    /// 客户账号密码
+    pub password: String,
     /// 客户类型
     pub ctype: ClientType,
     /// 联系人姓名
@@ -43,7 +58,7 @@ pub struct Client {
     /// 联系人电话
     pub contactor_tel: String,
     /// 通信email
-    pub email: Option<String>,
+    pub email: String,
     /// 客户备注
     pub description: Option<String>,
 }
@@ -63,6 +78,8 @@ pub struct ClientPageQueryId {
 #[derive(Debug, Deserialize)]
 pub struct InsertClient {
     pub name: String,
+    pub username: String,
+    pub password: String,
     pub ctype: ClientType,
     pub contactor: String,
     pub contactor_tel: String,
@@ -74,9 +91,47 @@ pub struct InsertClient {
 pub struct UpdateClient {
     pub id: u32,
     pub name: Option<String>,
+    pub password: Option<String>,
     pub ctype: Option<ClientType>,
     pub contactor: Option<String>,
     pub contactor_tel: Option<String>,
     pub email: Option<String>,
     pub description: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct LoginClient {
+    pub username: String,
+    pub password: String,
+}
+
+#[derive(Debug, Serialize)]
+pub struct ClientDTO {
+    pub name: String,
+    pub username: String, 
+    pub ctype: ClientType,
+    pub contactor: String,
+    pub contactor_tel: String,
+    pub email: String,
+    pub description: Option<String>,
+}
+
+impl From<Client> for ClientDTO {
+    fn from(c: Client) -> Self {
+        ClientDTO {
+            name: c.name,
+            username: c.username,
+            ctype: c.ctype,
+            contactor: c.contactor,
+            contactor_tel: c.contactor_tel,
+            email: c.email,
+            description: c.description,
+        }
+    }
+}
+
+#[derive(Debug, Deserialize)]
+pub struct ClientTypeModifyQuery {
+    pub id: u32,
+    pub ctype: ClientType,
 }

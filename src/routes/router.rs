@@ -8,6 +8,7 @@ use crate::handlers::{
     product::*,
     repository::*,
     user::*,
+    cop::user_client::*
 };
 
 
@@ -16,9 +17,7 @@ pub fn client_routes() -> Router<MySqlPool> {
         .route("/get", get(get_client))
         .route("/add", post(insert_client))
         .route("/update", post(update_client))
-        .route("/get_all", get(get_all_clients))
-        .route("/get_specified", get(get_specified_clients))
-        .route("/get_by_name_likes", get(get_clients_by_name_likes))
+        .route("/login", post(client_login))
 }
 
 pub fn inventory_routes() -> Router<MySqlPool> {
@@ -58,9 +57,18 @@ pub fn repository_routes() -> Router<MySqlPool> {
 
 pub fn user_routes() -> Router<MySqlPool> {
     Router::new()
+        .nest("/cop", user_client_routes())
         .route("/login", post(login))
         .route("/get", get(get_user))
         .route("/delete", delete(delete_user))
         .route("/add", post(insert_user))
         .route("/update", post(update_user))
+}
+
+fn user_client_routes() -> Router<MySqlPool> {
+    Router::new()
+        .route("/", get(user_get_client).post(modify_client_type))
+        .route("/all", get(get_all_clients))
+        .route("/likes", get(get_clients_by_name_likes))
+        .route("/specified", get(get_specified_clients))
 }
