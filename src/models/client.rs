@@ -1,7 +1,5 @@
 use serde::{Deserialize, Serialize};
-use sqlx::FromRow;
-
-use crate::models::page::PageQuery;
+use sqlx::{FromRow, Row, mysql::MySqlRow};
 
 #[derive(Deserialize, Serialize, Debug, Clone, sqlx::Type)]
 #[sqlx(rename_all = "lowercase")]
@@ -40,7 +38,7 @@ impl From<ClientType> for String {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize, FromRow, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 /// 客户信息
 pub struct Client {
     /// 客户id
@@ -63,6 +61,22 @@ pub struct Client {
     pub description: Option<String>,
 }
 
+impl<'r> FromRow<'r, MySqlRow> for Client {
+    fn from_row(row: &'r MySqlRow) -> Result<Self, sqlx::Error> {
+        Ok(Client {
+            id: row.try_get("id")?,
+            name: row.try_get("name")?,
+            username: row.try_get("username")?,
+            password: row.try_get("password")?,
+            ctype: ClientType::from(row.try_get::<String, _>("ctype")?),
+            contactor: row.try_get("contactor")?,
+            contactor_tel: row.try_get("contactor_tel")?,
+            email: row.try_get("email")?,
+            description: row.try_get("description")?,
+        })
+    }
+}
+
 #[derive(Debug, Deserialize)]
 pub struct ClientQueryId {
     pub id: u32,
@@ -71,8 +85,8 @@ pub struct ClientQueryId {
 #[derive(Debug, Deserialize)]
 pub struct ClientPageQueryId {
     pub id: u32,
-    #[serde(flatten)]
-    pub page: PageQuery,
+    pub page_size: u64,
+    pub page: u64,
 }
 
 #[derive(Debug, Deserialize)]

@@ -63,6 +63,7 @@ pub fn user_routes() -> Router<MySqlPool> {
         .route("/delete", delete(delete_user))
         .route("/add", post(insert_user))
         .route("/update", post(update_user))
+        .route("/get_all", get(get_page_users))
 }
 
 fn user_client_routes() -> Router<MySqlPool> {

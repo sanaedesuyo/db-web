@@ -4,8 +4,10 @@ use serde_json::Value;
 use sqlx::MySqlPool;
 use crate::errors::AppError;
 use crate::middleware::auth::RequireAdmin;
+use crate::models::page::{PageQuery, PageResponse};
 use crate::models::user::*;
 use crate::utils::jwt::{Claims, generate_token};
+use crate::utils::page_query::no_conditional_page_query;
 use crate::utils::password::{encrypt_password, verify_password};
 
 pub async fn get_user(
@@ -141,4 +143,24 @@ pub async fn delete_user(
     log::info!("{} deleted user id: {}", admin.username, param.id);
     
     Ok(Json(result.rows_affected()))
+}
+
+pub async fn get_page_users(
+    State(pool): State<MySqlPool>,
+    RequireAdmin(admin): RequireAdmin,
+    Query(page_param): Query<PageQuery>,
+) -> Result<Json<PageResponse<UserDTO>>, Json<AppError>> {
+    let users = no_conditional_page_query::<User>(&pool, "users", page_param).await?;
+
+    let data = users.data.into_iter().map(UserDTO::from).collect::<Vec<UserDTO>>();
+
+    log::info!("{} got pages of users.", admin.username);
+
+    return Ok(Json(PageResponse {
+        current_page: users.current_page,
+        data: data,
+        total: users.total,
+        page_size: users.page_size,
+        total_pages: users.total_pages,
+    }))
 }

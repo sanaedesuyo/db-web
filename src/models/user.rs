@@ -1,5 +1,5 @@
 use serde::{Deserialize, Serialize};
-use sqlx::{Decode, FromRow};
+use sqlx::{Decode, FromRow, mysql::MySqlRow, Row};
 
 #[derive(Serialize, Deserialize, Clone, Debug, sqlx::Type)]
 #[sqlx(rename_all = "lowercase")]
@@ -31,7 +31,7 @@ impl From<UserFlag> for String {
 }
 
 /// 系统用户
-#[derive(Debug, Serialize, Deserialize, FromRow, Decode)]
+#[derive(Debug, Serialize, Deserialize, Decode)]
 pub struct User {
     /// 用户id
     pub id: u32,
@@ -43,6 +43,18 @@ pub struct User {
     pub flag: UserFlag,
     /// 用户描述
     pub description: Option<String>,
+}
+
+impl<'r> FromRow<'r, MySqlRow> for User {
+    fn from_row(row: &'r MySqlRow) -> Result<Self, sqlx::Error> {
+        Ok(User {
+            id: row.try_get("id")?,
+            name: row.try_get("name")?,
+            password: row.try_get("password")?,
+            flag: UserFlag::from(row.try_get::<String, _>("flag")?),
+            description: row.try_get("description")?,
+        })
+    }
 }
 
 #[derive(Debug, Deserialize)]

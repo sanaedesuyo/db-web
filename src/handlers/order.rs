@@ -60,7 +60,7 @@ pub async fn get_orders_page_of_client(
     CurrentUser { username, .. }: CurrentUser,
     Query(param): Query<ClientPageQueryId>,
 ) -> Result<Json<PageResponse<OrderDTO>>, Json<AppError>> {
-    let offset = (param.page.page - 1) * param.page.page_size;
+    let offset = (param.page - 1) * param.page_size;
 
     let client = sqlx::query_as!(
         Client,
@@ -90,13 +90,13 @@ pub async fn get_orders_page_of_client(
         })?;
 
     let total_pages = (
-        (total as f64) / (param.page.page_size as f64)
+        (total as f64) / (param.page_size as f64)
     ).ceil() as u64;
 
     let orders = sqlx::query_as!(
         Order,
         "SELECT * FROM orders WHERE cid = ? LIMIT ? OFFSET ?",
-        existed_client.id, param.page.page, offset
+        existed_client.id, param.page_size, offset
     )
         .fetch_all(&pool)
         .await
@@ -140,12 +140,12 @@ pub async fn get_orders_page_of_client(
     let response = PageResponse {
         data: result,
         total: total as u64,
-        current_page: param.page.page,
-        page_size: param.page.page_size,
+        current_page: param.page,
+        page_size: param.page_size,
         total_pages,
     };
 
-    log::info!("{} get {} order records {}/{} page", username, response.data.len(), param.page.page, total_pages);
+    log::info!("{} get {} order records {}/{} page", username, response.data.len(), param.page, total_pages);
 
     Ok(Json(response))
 }

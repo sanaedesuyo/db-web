@@ -17,13 +17,13 @@ async fn main() {
         .expect("failed to connect to database");
 
     let app = Router::new()
-        .nest("/api/user", user_routes())
-        .nest("/api/client", client_routes())
-        .nest("/api/repository", repository_routes())
-        .nest("/api/product", product_routes())
-        .nest("/api/inventory", inventory_routes())
-        .nest("/api/order", order_routes())
-        .route("/api/health", get(health))
+        .nest("/user", user_routes())
+        .nest("/client", client_routes())
+        .nest("/repository", repository_routes())
+        .nest("/product", product_routes())
+        .nest("/inventory", inventory_routes())
+        .nest("/order", order_routes())
+        .route("/health", get(health))
         .with_state(pool.clone());
 
     env_logger::init();

@@ -12,7 +12,7 @@ where
 {
     let offset = (param.page - 1) * param.page_size;
 
-    let total: u64 = sqlx::query_scalar(
+    let total: i64 = sqlx::query_scalar(
         format!("SELECT COUNT(*) FROM {}", table).as_str()
     )
         .fetch_one(pool)
@@ -40,7 +40,7 @@ where
 
     Ok(PageResponse {
         data: result,
-        total,
+        total: total as u64,
         current_page: param.page,
         page_size: param.page_size,
         total_pages,
